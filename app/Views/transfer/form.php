@@ -1,0 +1,62 @@
+<?php use App\Core\Security; use App\Core\CSRF; ?>
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-7">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <h5 class="mb-0">Money Transfer</h5>
+          <a class="btn btn-sm btn-outline-secondary" href="/history">View History</a>
+        </div>
+
+        <?php if (!empty($error)): ?>
+          <div class="alert alert-danger"><?= Security::e((string)$error) ?></div>
+        <?php endif; ?>
+
+        <?php if (!empty($success)): ?>
+          <div class="alert alert-success">
+            <?= Security::e((string)$success) ?>
+            <?php if (!empty($tx_id)): ?>
+              <div class="small mt-1">Transaction ID: <strong><?= (int)$tx_id ?></strong></div>
+            <?php endif; ?>
+          </div>
+        <?php endif; ?>
+
+        <form method="post" action="/transfer" class="row g-3">
+          <input type="hidden" name="_csrf" value="<?= Security::e(CSRF::token()) ?>">
+
+          <div class="col-md-6">
+            <div class="form-floating">
+              <input class="form-control" id="receiver_id" type="number" name="receiver_id" min="1"
+                     placeholder="Receiver User ID" required>
+              <label for="receiver_id">Receiver User ID</label>
+            </div>
+            <div class="form-text">Find user IDs using the Search page.</div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-floating">
+              <input class="form-control" id="amount" type="number" name="amount" min="1" max="1000000"
+                     placeholder="Amount" required>
+              <label for="amount">Amount (Rs.)</label>
+            </div>
+            <div class="form-text">Min 1, Max 1,000,000.</div>
+          </div>
+
+          <div class="col-12">
+            <div class="form-floating">
+              <input class="form-control" id="comment" name="comment" maxlength="255"
+                     placeholder="Comment (optional)">
+              <label for="comment">Comment (optional)</label>
+            </div>
+          </div>
+
+          <div class="col-12 d-flex gap-2 flex-wrap">
+            <button class="btn btn-primary">Send</button>
+            <a class="btn btn-outline-primary" href="/users/search">Search Users</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+

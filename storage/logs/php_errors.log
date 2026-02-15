@@ -1,0 +1,5 @@
+[14-Feb-2026 14:26:21 UTC] PHP Fatal error:  Uncaught Error: Class "App\Core\Uploads" not found in /var/www/html/app/Controllers/ProfileController.php:65
+Stack trace:
+#0 /var/www/html/public/index.php(68): App\Controllers\ProfileController->uploadAvatar()
+#1 {main}
+  thrown in /var/www/html/app/Controllers/ProfileController.php on line 65

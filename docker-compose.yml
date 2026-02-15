@@ -1,0 +1,42 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+      - "8443:443"
+    environment:
+      APP_ENV: "prod"
+      APP_KEY: "change_this_to_a_long_random_string_32plus_chars"
+      DB_HOST: "db"
+      DB_NAME: "secureapp"
+      DB_USER: "secureuser"
+      DB_PASS: "securepass"
+      COOKIE_SECURE: "0"   # set to 1 when using HTTPS
+    volumes:
+      - ./storage:/var/www/html/storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: secureapp
+      MYSQL_USER: secureuser
+      MYSQL_PASSWORD: securepass
+      MYSQL_ROOT_PASSWORD: rootpass
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      start_period: 3m
+      interval: 5s
+      timeout: 3s
+      retries: 60
+
+volumes:
+  dbdata:
+
