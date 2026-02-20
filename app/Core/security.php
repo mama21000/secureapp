@@ -39,7 +39,17 @@ final class Security {
     header('Permissions-Policy: geolocation=(), camera=(), microphone=()');
 
     // Conservative CSP (adjust if you add external CDNs)
-    header("Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; object-src 'none'");
+    header("Content-Security-Policy: 
+  default-src 'self';
+  img-src 'self' data: blob:;
+  base-uri 'self';
+  frame-ancestors 'none';
+  form-action 'self';
+  object-src 'none';
+  style-src 'self' 'unsafe-inline';
+  script-src 'self';
+");
+  
 
     // Prevent caching of sensitive pages
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
