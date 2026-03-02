@@ -1,2 +1,2 @@
-storage/logs/
-storage/uploads/avatars/*.webp
+#storage/logs/
+#storage/uploads/avatars/*.webp
