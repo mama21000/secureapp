@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   ip VARCHAR(45) NOT NULL,
   username VARCHAR(40) NULL,
   attempted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  success TINYINT(1) DEFAULT 0,
   INDEX (ip),
   INDEX (username),
   INDEX (attempted_at)
