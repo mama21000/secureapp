@@ -216,3 +216,13 @@ docker compose logs -f db         # follow db logs
 docker compose down               # stop containers
 docker compose down -v            # stop + delete DB volume (DATA LOSS)
 ```
+
+## Notes for Developers
+
+To allow developing application in realtime, so that the webapp gets updated as soon as you make any code changes, please make the following changes.
+
+![Development Related Changes](temporary-changes-for-development.png)
+
+This does two things - 
+1. Mounts app and public directory on docker image. The webapp will immediately reflect changes made by developers.
+2. Report all errors on client side.
