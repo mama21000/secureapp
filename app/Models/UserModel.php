@@ -64,6 +64,19 @@ final class UserModel
     return $stmt->fetchAll();
   }
 
+  /**
+ * Fetch user data specifically for authentication.
+ * INCLUDES password_hash (which is usually hidden).
+ */
+  public static function findForAuth(string $username): ?array
+  {
+      $pdo = DB::pdo();
+      $stmt = $pdo->prepare("SELECT id, username, password_hash FROM users WHERE username = ? LIMIT 1");
+      $stmt->execute([trim($username)]);
+      $row = $stmt->fetch();
+      return $row ?: null;
+  }
+
   private static function escapeLike(string $s): string
   {
     // Escape LIKE wildcards and backslash
