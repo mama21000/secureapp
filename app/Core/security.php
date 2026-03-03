@@ -5,8 +5,8 @@ namespace App\Core;
 
 final class Security
 {
-    private const SESSION_IDLE_TIMEOUT = 10;     // 15 minutes
-    private const SESSION_ABSOLUTE_TIMEOUT = 20; // 8 hours
+    private const SESSION_IDLE_TIMEOUT = 900;     // 15 minutes
+    private const SESSION_ABSOLUTE_TIMEOUT = 28800; // 8 hours
 
     public static function init(): void
     {
