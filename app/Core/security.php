@@ -3,62 +3,190 @@ declare(strict_types=1);
 
 namespace App\Core;
 
-final class Security {
-  public static function init(): void {
-    // Harden PHP session behavior
-    ini_set('session.use_strict_mode', '1');
-    ini_set('session.use_only_cookies', '1');
-    ini_set('session.cookie_httponly', '1');
+final class Security
+{
+    private const SESSION_IDLE_TIMEOUT = 900;     // 15 minutes
+    private const SESSION_ABSOLUTE_TIMEOUT = 28800; // 8 hours
 
-    $secure = Config::env('COOKIE_SECURE', '0') === '1';
-    ini_set('session.cookie_secure', $secure ? '1' : '0');
-    // Lax blocks most CSRF while keeping login flows OK; you still implement CSRF token for POST.
-    ini_set('session.cookie_samesite', 'Lax');
+    public static function init(): void
+    {
+        // -------------------------------------------------
+        // 1. Enforce HTTPS (Fail Fast)
+        // -------------------------------------------------
+        // (Uncomment for Production/Docker)
+        /*
+        if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off') {
+            http_response_code(400);
+            exit('HTTPS Required');
+        }
+        */
 
-    // Reduce fingerprinting
-    ini_set('expose_php', '0');
+        // -------------------------------------------------
+        // 2. Secure Session Configuration
+        // -------------------------------------------------
+        ini_set('session.use_strict_mode', '1');
+        ini_set('session.use_only_cookies', '1');
+        ini_set('session.cookie_httponly', '1');
+        
+        // ini_set('session.cookie_secure', '1');
+        // Conditional Secure Flag (Auto-detects HTTPS)
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+        ini_set('session.cookie_secure', $isHttps ? '1' : '0');
+        
+        ini_set('session.cookie_samesite', 'Strict');
+        ini_set('expose_php', '0');
 
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-      session_name('SECSESSID');
-      session_start();
+        session_name('__Secure-ID'); // Secure prefix requires Secure flag
+        session_start();
+
+        // -------------------------------------------------
+        // 3. Session Timeout and Rotation
+        // -------------------------------------------------
+        $now = time();
+
+        if (!isset($_SESSION['created'])) {
+            $_SESSION['created'] = $now;
+        }
+
+        if (!isset($_SESSION['last_activity'])) {
+            $_SESSION['last_activity'] = $now;
+        }
+
+        // Idle timeout
+        if ($now - $_SESSION['last_activity'] > self::SESSION_IDLE_TIMEOUT) {
+            self::destroySession();
+        }
+
+        // Absolute timeout
+        if ($now - $_SESSION['created'] > self::SESSION_ABSOLUTE_TIMEOUT) {
+            self::destroySession();
+        }
+
+        $_SESSION['last_activity'] = $now;
+
+        // Rotate ID every 5 minutes
+        if (!isset($_SESSION['_regen'])) {
+            $_SESSION['_regen'] = $now;
+        } elseif ($now - $_SESSION['_regen'] > 300) {
+            session_regenerate_id(true);
+            $_SESSION['_regen'] = $now;
+        }
     }
 
-    // Basic anti-fixation: regenerate occasionally
-    if (!isset($_SESSION['_regen'])) {
-      $_SESSION['_regen'] = time();
-    } elseif (time() - (int)$_SESSION['_regen'] > 300) {
-      session_regenerate_id(true);
-      $_SESSION['_regen'] = time();
+    private static function destroySession(): void
+    {
+        $_SESSION = [];
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params["path"],
+                $params["domain"],
+                true,
+                true
+            );
+        }
+        session_destroy();
+        exit('Session expired');
     }
-  }
 
-  public static function sendHeaders(): void {
-    header('X-Frame-Options: DENY');
-    header('X-Content-Type-Options: nosniff');
-    header('Referrer-Policy: no-referrer');
-    header('Permissions-Policy: geolocation=(), camera=(), microphone=()');
+    public static function sendHeaders(): void
+    {
+        // -------------------------------------------------
+        // 4. HSTS
+        // -------------------------------------------------
+        // header('Strict-Transport-Security: max-age=63072000; includeSubDomains; preload');
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 
-    // Conservative CSP (adjust if you add external CDNs)
-    header("Content-Security-Policy: 
-  default-src 'self';
-  img-src 'self' data: blob:;
-  base-uri 'self';
-  frame-ancestors 'none';
-  form-action 'self';
-  object-src 'none';
-  style-src 'self' 'unsafe-inline';
-  script-src 'self';
-");
-  
+        if ($isHttps) {
+            header('Strict-Transport-Security: max-age=63072000; includeSubDomains; preload');
+        }
 
-    // Prevent caching of sensitive pages
-    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-    header('Pragma: no-cache');
-  }
+        // -------------------------------------------------
+        // 5. Clickjacking Protection
+        // -------------------------------------------------
+        header('X-Frame-Options: DENY');
+        // header('Content-Security-Policy: frame-ancestors \'none\';');
 
-  public static function e(string $s): string {
-    return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-  }
+        // -------------------------------------------------
+        // 6. MIME Sniffing Protection
+        // -------------------------------------------------
+        header('X-Content-Type-Options: nosniff');
+
+        // -------------------------------------------------
+        // 7. Privacy Controls
+        // -------------------------------------------------
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+
+        // -------------------------------------------------
+        // 8. Browser Isolation Headers (Modern)
+        // -------------------------------------------------
+        header('Cross-Origin-Opener-Policy: same-origin');
+        header('Cross-Origin-Resource-Policy: same-origin');
+        header('Cross-Origin-Embedder-Policy: require-corp');
+
+        // -------------------------------------------------
+        // 9. Permissions Policy
+        // -------------------------------------------------
+        header(
+            'Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), gyroscope=()'
+        );
+
+        // -------------------------------------------------
+        // 10. Strong CSP with Nonce
+        // -------------------------------------------------
+        // $nonce = base64_encode(random_bytes(16));
+
+        // $_SESSION['csp_nonce'] = $nonce;
+        if (!isset($_SESSION['csp_nonce'])) {
+            $_SESSION['csp_nonce'] = base64_encode(random_bytes(16));
+        }
+        $nonce = $_SESSION['csp_nonce'];
+
+        $csp =
+            "default-src 'self'; " .
+
+            // 1. SCRIPTS: STRICT (Nonce only)
+            // Blocks all XSS (<script>...</script>).
+            "script-src 'self' 'nonce-{$nonce}'; " .
+            
+            // 2. STYLE BLOCKS: STRICT (Nonce only)
+            // Blocks injected <style>...</style> tags. 
+            // YOUR REFACTORING WORK PROTECTS THIS.
+            "style-src 'self' 'nonce-{$nonce}'; " .
+            
+            // 3. STYLE ATTRIBUTES: RELAXED
+            // Allows style="..." for Bootstrap JS positioning.
+            // This is a "Defense in Depth" compromise.
+            "style-src-attr 'self' 'unsafe-inline'; " .
+
+            // "script-src 'self' 'nonce-{$nonce}'; " .	// STRICT: Only allows scripts with nonce
+            // "style-src 'self' 'nonce-{$nonce}'; " .		// STRICT: Only allows styles with nonce
+            "img-src 'self' data:; " .
+            "font-src 'self'; " .
+            "connect-src 'self'; " .
+            "object-src 'none'; " .
+            "base-uri 'self'; " .
+            "form-action 'self'; " .
+            "frame-ancestors 'none'; " .
+            "upgrade-insecure-requests;";
+
+        header("Content-Security-Policy: $csp");
+
+        // -------------------------------------------------
+        // 11. Anti-Caching for Sensitive Pages
+        // -------------------------------------------------
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+    }
+
+    public static function e(string $s): string
+    {
+        return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
 
   /**
      * Validate password against strong password policy.
@@ -90,4 +218,3 @@ final class Security {
         return ['valid' => true, 'message' => 'OK'];
     }
 }
-

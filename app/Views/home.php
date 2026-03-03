@@ -1,4 +1,118 @@
-<?php use App\Core\Security; use App\Core\Auth; ?>
+<?php 
+use App\Core\Security; 
+use App\Core\Auth; 
+
+// Retrieve the nonce generated in Security::init()
+$nonce = $_SESSION['csp_nonce'] ?? '';
+?>
+
+<style nonce="<?= $nonce ?>">
+  /* Balance Card */
+  .balance-card {
+    background: linear-gradient(135deg, #1a56db, #6366f1);
+    border-radius: 14px;
+    color: white;
+  }
+  .balance-label {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5); /* text-white-50 equivalent */
+  }
+  .balance-value {
+    font-size: 2rem;
+    letter-spacing: -1px;
+    font-weight: 700;
+  }
+  .account-label {
+    font-size: .82rem;
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* Quick Link Cards (Replaces onmouseover logic) */
+  .quick-link-card {
+    height: 100%;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px;
+    text-align: center;
+    padding: 1rem 0.5rem;
+    transition: all .18s ease;
+    background: white;
+  }
+  /* The Hover Effect (Replaces JS) */
+  .quick-link-card:hover {
+    border-color: #6366f1 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99,102,241,.15);
+  }
+  .quick-link-icon {
+    font-size: 1.6rem;
+    margin-bottom: 0.5rem;
+  }
+  .quick-link-text {
+    font-size: .85rem;
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  /* Transaction Table */
+  .tx-header {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #94a3b8;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 8px 12px;
+  }
+  .tx-cell {
+    padding: 11px 12px;
+  }
+  .tx-user-text {
+    font-size: .88rem;
+    color: #1e293b;
+    font-weight: 600;
+  }
+  .tx-date {
+    font-size: .82rem;
+    color: #6c757d;
+    white-space: nowrap;
+  }
+  .tx-comment {
+    font-size: .82rem;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Badges & Amounts */
+  .badge-sent {
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: .75rem;
+    font-weight: 600;
+    padding: 5px 10px;
+  }
+  .badge-received {
+    background: #dcfce7;
+    color: #16a34a;
+    font-size: .75rem;
+    font-weight: 600;
+    padding: 5px 10px;
+  }
+  .amount-sent { color: #dc2626; font-size: .95rem; font-weight: 700; }
+  .amount-received { color: #16a34a; font-size: .95rem; font-weight: 700; }
+
+  /* Logged Out Hero */
+  .hero-card {
+    border-radius: 16px;
+    padding: 3rem;
+  }
+  .hero-icon { font-size: 2.8rem; }
+  .hero-badges { font-size: .82rem; }
+</style>
 
 <?php if (!empty($loggedIn)): ?>
 <!-- ════════════ LOGGED IN — DASHBOARD ════════════ -->
@@ -9,7 +123,7 @@
     <h4 class="fw-bold mb-1">
       Welcome back, <?= Security::e((string)$username) ?> 👋
     </h4>
-    <p class="text-muted mb-0" style="font-size:.9rem;">
+    <p class="text-muted mb-0 small">
       Here's a summary of your account.
     </p>
   </div>
@@ -21,17 +135,15 @@
 
   <!-- Balance Card -->
   <div class="col-md-4">
-    <div class="card h-100 border-0 text-white"
-         style="background:linear-gradient(135deg,#1a56db,#6366f1);border-radius:14px;">
+    <div class="card h-100 border-0 balance-card">
       <div class="card-body p-4">
-        <p class="mb-1 text-white-50"
-           style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;font-weight:600;">
+        <p class="mb-1 balance-label">
           Available Balance
         </p>
-        <h2 class="fw-bold mb-1" style="font-size:2rem;letter-spacing:-1px;">
+        <h2 class="mb-1 balance-value">
           ₹<?= number_format((int)($balance ?? 0)) ?>
         </h2>
-        <p class="mb-0 text-white-50" style="font-size:.82rem;">
+        <p class="mb-0 account-label">
           Account: <strong class="text-white"><?= Security::e((string)$username) ?></strong>
         </p>
       </div>
@@ -43,49 +155,37 @@
     <div class="row g-3 h-100">
 
       <div class="col-6 col-sm-3">
-        <a href="/profile/edit" class="text-decoration-none">
-          <div class="card h-100 border text-center py-3 px-2"
-               style="border-radius:12px;border-color:#e2e8f0 !important;transition:all .18s;"
-               onmouseover="this.style.borderColor='#6366f1';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.15)';"
-               onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='';this.style.boxShadow='';">
-            <div class="mb-2" style="font-size:1.6rem;">👤</div>
-            <div class="fw-semibold" style="font-size:.85rem;color:#1e293b;">Profile</div>
+          <a href="/users/profile?id=<?= (int)Auth::userId() ?>" class="text-decoration-none">
+            <div class="quick-link-card">
+            <div class="quick-link-icon">👤</div>
+            <div class="quick-link-text">Profile</div>
           </div>
         </a>
       </div>
 
       <div class="col-6 col-sm-3">
         <a href="/users/search" class="text-decoration-none">
-          <div class="card h-100 border text-center py-3 px-2"
-               style="border-radius:12px;border-color:#e2e8f0 !important;transition:all .18s;"
-               onmouseover="this.style.borderColor='#6366f1';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.15)';"
-               onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='';this.style.boxShadow='';">
-            <div class="mb-2" style="font-size:1.6rem;">🔍</div>
-            <div class="fw-semibold" style="font-size:.85rem;color:#1e293b;">Search</div>
+          <div class="quick-link-card">
+            <div class="quick-link-icon">🔍</div>
+            <div class="quick-link-text">Search</div>
           </div>
         </a>
       </div>
 
       <div class="col-6 col-sm-3">
         <a href="/transfer" class="text-decoration-none">
-          <div class="card h-100 border text-center py-3 px-2"
-               style="border-radius:12px;border-color:#e2e8f0 !important;transition:all .18s;"
-               onmouseover="this.style.borderColor='#6366f1';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.15)';"
-               onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='';this.style.boxShadow='';">
-            <div class="mb-2" style="font-size:1.6rem;">💸</div>
-            <div class="fw-semibold" style="font-size:.85rem;color:#1e293b;">Transfer</div>
+          <div class="quick-link-card">
+            <div class="quick-link-icon">💸</div>
+            <div class="quick-link-text">Transfer</div>
           </div>
         </a>
       </div>
 
       <div class="col-6 col-sm-3">
         <a href="/history" class="text-decoration-none">
-          <div class="card h-100 border text-center py-3 px-2"
-               style="border-radius:12px;border-color:#e2e8f0 !important;transition:all .18s;"
-               onmouseover="this.style.borderColor='#6366f1';this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 12px rgba(99,102,241,.15)';"
-               onmouseout="this.style.borderColor='#e2e8f0';this.style.transform='';this.style.boxShadow='';">
-            <div class="mb-2" style="font-size:1.6rem;">📋</div>
-            <div class="fw-semibold" style="font-size:.85rem;color:#1e293b;">History</div>
+          <div class="quick-link-card">
+            <div class="quick-link-icon">📋</div>
+            <div class="quick-link-text">History</div>
           </div>
         </a>
       </div>
@@ -100,7 +200,7 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h6 class="fw-bold mb-0">Recent Transactions</h6>
-      <a href="/history" class="btn btn-sm btn-outline-secondary" style="font-size:.8rem;">
+      <a href="/history" class="btn btn-sm btn-outline-secondary small">
         View All →
       </a>
     </div>
@@ -118,11 +218,11 @@
         <table class="table table-hover align-middle mb-0">
           <thead>
             <tr>
-              <th style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;border-bottom:2px solid #e2e8f0;padding:8px 12px;">Type</th>
-              <th style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;border-bottom:2px solid #e2e8f0;padding:8px 12px;">With</th>
-              <th style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;border-bottom:2px solid #e2e8f0;padding:8px 12px;">Date</th>
-              <th style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;border-bottom:2px solid #e2e8f0;padding:8px 12px;">Comment</th>
-              <th class="text-end" style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;border-bottom:2px solid #e2e8f0;padding:8px 12px;">Amount</th>
+              <th class="tx-header">Type</th>
+              <th class="tx-header">With</th>
+              <th class="tx-header">Date</th>
+              <th class="tx-header">Comment</th>
+              <th class="tx-header text-end">Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -136,47 +236,35 @@
                 $comment = trim((string)($tx['comment'] ?? ''));
             ?>
             <tr>
-              <td style="padding:11px 12px;">
+              <td class="tx-cell">
                 <?php if ($isSent): ?>
-                  <span class="badge rounded-pill"
-                        style="background:#fee2e2;color:#dc2626;font-size:.75rem;font-weight:600;padding:5px 10px;">
-                    ↑ Sent
-                  </span>
+                  <span class="badge rounded-pill badge-sent">↑ Sent</span>
                 <?php else: ?>
-                  <span class="badge rounded-pill"
-                        style="background:#dcfce7;color:#16a34a;font-size:.75rem;font-weight:600;padding:5px 10px;">
-                    ↓ Received
-                  </span>
+                  <span class="badge rounded-pill badge-received">↓ Received</span>
                 <?php endif; ?>
               </td>
 
-              <td style="padding:11px 12px;">
-                <span class="fw-semibold" style="font-size:.88rem;color:#1e293b;">
-                  <?= $other ?>
-                </span>
+              <td class="tx-cell">
+                <span class="tx-user-text"><?= $other ?></span>
               </td>
 
-              <td style="padding:11px 12px;">
-                <span class="text-muted" style="font-size:.82rem;white-space:nowrap;">
-                  <?= Security::e((string)$tx['created_at']) ?>
-                </span>
+              <td class="tx-cell">
+                <span class="tx-date"><?= Security::e((string)$tx['created_at']) ?></span>
               </td>
 
-              <td style="padding:11px 12px;max-width:160px;">
+              <td class="tx-cell" style="max-width:160px;">
                 <?php if ($comment !== ''): ?>
-                  <span class="text-muted fst-italic"
-                        style="font-size:.82rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+                  <span class="text-muted fst-italic tx-comment"
                         title="<?= htmlspecialchars($comment, ENT_QUOTES, 'UTF-8') ?>">
                     "<?= Security::e(mb_strimwidth($comment, 0, 35, '…')) ?>"
                   </span>
                 <?php else: ?>
-                  <span class="text-muted" style="font-size:.8rem;">—</span>
+                  <span class="text-muted small">—</span>
                 <?php endif; ?>
               </td>
 
-              <td class="text-end" style="padding:11px 12px;">
-                <span class="fw-bold"
-                      style="font-size:.95rem;color:<?= $isSent ? '#dc2626' : '#16a34a' ?>;">
+              <td class="text-end tx-cell">
+                <span class="<?= $isSent ? 'amount-sent' : 'amount-received' ?>">
                   <?= $isSent ? '−' : '+' ?>₹<?= number_format((int)$tx['amount']) ?>
                 </span>
               </td>
@@ -194,8 +282,8 @@
 <!-- ════════════ LOGGED OUT — HERO ════════════ -->
 <div class="row justify-content-center">
   <div class="col-lg-5 col-md-7">
-    <div class="card border-0 shadow-sm text-center p-5" style="border-radius:16px;">
-      <div class="mb-3" style="font-size:2.8rem;">🔐</div>
+    <div class="card border-0 shadow-sm text-center hero-card">
+      <div class="mb-3 hero-icon">🔐</div>
       <h3 class="fw-bold mb-2">Welcome to SecureApp</h3>
       <p class="text-muted mb-4">
         Secure profiles, money transfers, and activity logging — all in one place.
@@ -204,8 +292,7 @@
         <a class="btn btn-primary px-4" href="/login">Login</a>
         <a class="btn btn-outline-primary px-4" href="/register">Register</a>
       </div>
-      <div class="mt-4 pt-3 border-top d-flex justify-content-center gap-4 text-muted flex-wrap"
-           style="font-size:.82rem;">
+      <div class="mt-4 pt-3 border-top d-flex justify-content-center gap-4 text-muted flex-wrap hero-badges">
         <span>🔒 Secure Sessions</span>
         <span>💸 Safe Transfers</span>
         <span>📊 Activity Logs</span>

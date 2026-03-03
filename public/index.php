@@ -1,4 +1,6 @@
 <?php
+// ini_set('display_errors', 1);
+// error_reporting(E_ALL);
 require __DIR__ . '/../app/Core/bootstrap.php';
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';

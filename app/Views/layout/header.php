@@ -6,10 +6,14 @@ use App\Core\Security;
 use App\Core\CSRF;
 use App\Models\ProfileModel;
 
+// ── 1. Secure Nonce Retrieval ───────────────────────────────────────────
+// We need this for the CSP to allow our CSS and JS to run.
+$nonce = $_SESSION['csp_nonce'] ?? '';
+
 // ── Flash messages — read once then clear from session ──────────────────
 $flashSuccess = isset($_SESSION['flash_success']) ? (string)$_SESSION['flash_success'] : null;
 $flashError   = isset($_SESSION['flash_error'])   ? (string)$_SESSION['flash_error']   : null;
-$flashInfo    = isset($_SESSION['flash_info'])     ? (string)$_SESSION['flash_info']    : null;
+$flashInfo    = isset($_SESSION['flash_info'])    ? (string)$_SESSION['flash_info']    : null;
 unset($_SESSION['flash_success'], $_SESSION['flash_error'], $_SESSION['flash_info']);
 
 // ── Avatar for navbar — only fetched when logged in ─────────────────────
@@ -36,10 +40,11 @@ if (Auth::check()) {
 
   <title><?= htmlspecialchars((string)($title ?? 'SecureApp'), ENT_QUOTES, 'UTF-8') ?></title>
 
-  <link rel="stylesheet" href="/assets/bootstrap.min.css">
-  <link rel="stylesheet" href="/assets/app.css">
+  <link rel="stylesheet" href="/assets/bootstrap.min.css" nonce="<?= $nonce ?>">
+  <link rel="stylesheet" href="/assets/app.css" nonce="<?= $nonce ?>">
+  <link rel="icon" href="data:,">
 
-  <style>
+  <style nonce="<?= $nonce ?>">
     /* ── Flash alerts ── */
     .flash-alert {
       border-left: 4px solid transparent;
@@ -132,18 +137,14 @@ if (Auth::check()) {
 
           <!-- Avatar + username → links to profile -->
           <li class="nav-item me-lg-1">
-            <a href="/profile/edit" class="nav-user-link">
+            <a href="/users/profile?id=<?= (int)Auth::userId() ?>" class="nav-user-link">
               <?php if ($navAvatarUrl !== null): ?>
                 <!-- Avatar image — onerror swaps to initials circle -->
                 <img src="<?= htmlspecialchars($navAvatarUrl, ENT_QUOTES, 'UTF-8') ?>"
                      alt="<?= $safeUsername ?>"
                      class="nav-avatar-img"
-                     id="navAvatarImg"
-                     onerror="
-                       this.style.display='none';
-                       var el=document.getElementById('navAvatarInitials');
-                       if(el) el.style.display='inline-flex';
-                     ">
+                     id="navAvatarImg">
+                
                 <span class="nav-avatar-initials"
                       id="navAvatarInitials"
                       style="display:none;">
@@ -159,6 +160,7 @@ if (Auth::check()) {
           </li>
 
           <!-- <li class="nav-item"><a class="nav-link" href="/profile/edit">My Profile</a></li> -->
+          <!-- <li class="nav-item"><a href="/users/profile?id=<?= (int)Auth::userId() ?>" class="nav-link"></li> -->
           <li class="nav-item"><a class="nav-link" href="/users/search">Search</a></li>
           <li class="nav-item"><a class="nav-link" href="/transfer">Transfer</a></li>
           <li class="nav-item"><a class="nav-link" href="/history">History</a></li>
@@ -186,7 +188,6 @@ if (Auth::check()) {
   <!-- ── Flash Messages ── -->
   <?php if ($flashSuccess !== null || $flashError !== null || $flashInfo !== null): ?>
     <div class="mb-4">
-
       <?php if ($flashSuccess !== null): ?>
         <div class="flash-alert alert alert-success alert-dismissible fade show" role="alert">
           <span class="flash-icon">✅</span>
@@ -194,7 +195,6 @@ if (Auth::check()) {
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss"></button>
         </div>
       <?php endif; ?>
-
       <?php if ($flashError !== null): ?>
         <div class="flash-alert alert alert-danger alert-dismissible fade show" role="alert">
           <span class="flash-icon">❌</span>
@@ -202,7 +202,6 @@ if (Auth::check()) {
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss"></button>
         </div>
       <?php endif; ?>
-
       <?php if ($flashInfo !== null): ?>
         <div class="flash-alert alert alert-info alert-dismissible fade show" role="alert">
           <span class="flash-icon">ℹ️</span>
@@ -210,6 +209,18 @@ if (Auth::check()) {
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Dismiss"></button>
         </div>
       <?php endif; ?>
-
     </div>
   <?php endif; ?>
+
+  <script nonce="<?= $nonce ?>">
+    document.addEventListener("DOMContentLoaded", function() {
+      var img = document.getElementById('navAvatarImg');
+      if (img) {
+        img.onerror = function() {
+          this.style.display = 'none';
+          var initials = document.getElementById('navAvatarInitials');
+          if (initials) initials.style.display = 'inline-flex';
+        };
+      }
+    });
+  </script>
