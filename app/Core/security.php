@@ -59,5 +59,35 @@ final class Security {
   public static function e(string $s): string {
     return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
   }
+
+  /**
+     * Validate password against strong password policy.
+     *
+     * Policy:
+     * - Minimum 10 characters
+     * - Maximum 64 characters
+     * - At least one uppercase letter
+     * - At least one digit
+     * - At least one special character
+     *
+     * @param string $password Raw password input
+     * @return array{valid: bool, message: string}
+     */
+    public static function validatePassword(string $password): array
+    {
+        $policyMessage = "Password must be between 10 and 64 characters long and include at least one uppercase letter, one number, and one special character.";
+
+        if (
+            strlen($password) < 10 ||
+            strlen($password) > 64 ||
+            !preg_match('/[A-Z]/', $password) ||
+            !preg_match('/[0-9]/', $password) ||
+            !preg_match('/[\W_]/', $password)
+        ) {
+            return ['valid' => false, 'message' => $policyMessage];
+        }
+
+        return ['valid' => true, 'message' => 'OK'];
+    }
 }
 

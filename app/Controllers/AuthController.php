@@ -7,6 +7,7 @@ use App\Core\Response;
 use App\Core\DB;
 use App\Core\CSRF;
 use App\Core\Auth;
+use App\Core\Security;
 
 final class AuthController {
 
@@ -29,9 +30,13 @@ final class AuthController {
       Response::view('auth/register', ['error' => 'Invalid email.']);
       return;
     }
-    if (strlen($password) < 10 || strlen($password) > 200) {
-      Response::view('auth/register', ['error' => 'Password must be at least 10 characters.']);
-      return;
+    
+    // validate password according to password policy.
+    $password_validation_result = Security::validatePassword($password);
+    if (!$password_validation_result['valid']) {
+        $error = $password_validation_result['message'];
+        Response::view('auth/register', ['error' => $error]);
+        return;
     }
 
     $hash = password_hash($password, PASSWORD_DEFAULT);
