@@ -8,6 +8,9 @@ require __DIR__ . '/csrf.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/response.php';
 require __DIR__ . '/logger.php';
+require __DIR__ . '/request_context.php';
+require __DIR__ . '/file_logger.php';
+
 
 spl_autoload_register(function ($class) {
   $prefix = 'App\\';
@@ -19,6 +22,7 @@ spl_autoload_register(function ($class) {
   }
 });
 
+\App\Core\RequestContext::init();
 \App\Core\Security::init();
 \App\Core\Security::sendHeaders();
 

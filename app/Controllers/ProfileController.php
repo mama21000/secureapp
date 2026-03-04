@@ -8,6 +8,7 @@ use App\Core\CSRF;
 use App\Core\Response;
 use App\Core\Uploads;
 use App\Models\ProfileModel;
+use App\Core\FileLogger;
 
 final class ProfileController
 {
@@ -39,16 +40,19 @@ final class ProfileController
 
         // Validation
         if ($fullName !== null && mb_strlen($fullName) > 120) {
+            FileLogger::warning("Profile update failed for user ID {$uid}: Full name too long.");
             $_SESSION['flash_error'] = 'Full name too long.';
             Response::redirect('/profile/edit');
             return;
         }
         if ($phone !== null && (mb_strlen($phone) > 30 || !preg_match('/^[0-9+\-()\s]{6,30}$/', $phone))) {
+            FileLogger::warning("Profile update failed for user ID {$uid}: Invalid phone number '{$phone}'.");
             $_SESSION['flash_error'] = 'Invalid phone number.';
             Response::redirect('/profile/edit');
             return;
         }
         if ($bio !== null && mb_strlen($bio) > 10000) {
+            FileLogger::warning("Profile update failed for user ID {$uid}: Bio too long.");
             $_SESSION['flash_error'] = 'Bio too long.';
             Response::redirect('/profile/edit');
             return;
@@ -58,6 +62,7 @@ final class ProfileController
 
         // ── Flash success then redirect (prevents re-submit on refresh) ──
         $_SESSION['flash_success'] = 'Profile updated successfully.';
+        FileLogger::info("Profile updated successfully for user ID {$uid}");
         Response::redirect('/profile/edit');
     }
 

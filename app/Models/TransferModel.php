@@ -5,6 +5,7 @@ namespace App\Models;
 
 use App\Core\DB;
 use PDO;
+use App\Core\FileLogger;
 
 final class TransferModel
 {
@@ -41,6 +42,7 @@ final class TransferModel
 
             if (count($rows) !== 2) {
                 $pdo->rollBack();
+                FileLogger::warning("Transfer failed: Receiver not found (ID: {$receiverId})");
                 return ['ok' => false, 'error' => 'Receiver not found.'];
             }
 
@@ -52,11 +54,13 @@ final class TransferModel
 
             if ($senderBal === null || $recvBal === null) {
                 $pdo->rollBack();
+                FileLogger::warning("Transfer failed: Receiver not found (ID: {$receiverId})");
                 return ['ok' => false, 'error' => 'Receiver not found.'];
             }
 
             if ($senderBal < $amount) {
                 $pdo->rollBack();
+                FileLogger::warning("Transfer failed: Insufficient balance for user ID {$senderId}");
                 return ['ok' => false, 'error' => 'Insufficient balance.'];
             }
 
@@ -72,11 +76,12 @@ final class TransferModel
 
             $txId = (int)$pdo->lastInsertId();
             $pdo->commit();
-
+            FileLogger::info("Transfer successful: {$amount} from user ID {$senderId} to user ID {$receiverId}, tx ID: {$txId}");
             return ['ok' => true, 'tx_id' => $txId];
 
         } catch (\Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
+            FileLogger::error("Transfer failed: " . $e->getMessage());
             return ['ok' => false, 'error' => 'Transfer failed. Try again.'];
         }
     }

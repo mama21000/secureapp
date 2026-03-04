@@ -9,6 +9,7 @@ use App\Core\CSRF;
 use App\Core\Auth;
 use App\Core\Security;
 use App\Models\UserModel;
+use App\Core\FileLogger;
 
 final class AuthController {
 
@@ -24,10 +25,12 @@ final class AuthController {
     $password = (string)($_POST['password'] ?? '');
 
     if (!preg_match('/^[a-zA-Z0-9_]{3,40}$/', $username)) {
+      FileLogger::warning("Registration failed: Invalid username '{$username}'");
       Response::view('auth/register', ['error' => 'Invalid username.']);
       return;
     }
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 120) {
+      FileLogger::warning("Registration failed: Invalid email '{$email}'");
       Response::view('auth/register', ['error' => 'Invalid email.']);
       return;
     }
@@ -36,6 +39,7 @@ final class AuthController {
     $password_validation_result = Security::validatePassword($password);
     if (!$password_validation_result['valid']) {
         $error = $password_validation_result['message'];
+        FileLogger::warning("Registration failed: {$error}");
         Response::view('auth/register', ['error' => $error]);
         return;
     }
@@ -48,10 +52,12 @@ final class AuthController {
     try {
       $stmt->execute([$username, $email, $hash]);
     } catch (\PDOException $e) {
+      FileLogger::warning("Registration failed: Username/email already exists.");
       Response::view('auth/register', ['error' => 'Username/email already exists.']);
       return;
     }
 
+    FileLogger::info("User registered successfully: {$username}");
     Response::redirect('/login');
   }
 
@@ -83,6 +89,7 @@ final class AuthController {
       $ipStats = $stmtIP->fetch();
 
       if (($ipStats['failures'] ?? 0) >= $IP_LIMIT) {
+          FileLogger::warning("Login blocked: Too many failed attempts from IP {$ip}");
           $this->enforceLockout($pdo, $ip, $username, $ipStats['first_fail'], $LOCKOUT_MINUTES, 'IP');
           return;
       }
@@ -98,6 +105,7 @@ final class AuthController {
       $userStats = $stmtUser->fetch();
 
       if (($userStats['failures'] ?? 0) >= $USER_LIMIT) {
+          FileLogger::warning("Login blocked: Too many failed attempts for username '{$username}'");
           $this->enforceLockout($pdo, $ip, $username, $userStats['first_fail'], $LOCKOUT_MINUTES, 'USER');
           return;
       }
@@ -111,6 +119,7 @@ final class AuthController {
       $ins->execute([$ip, $username ?: null, $ok ? 1 : 0]);
 
       if (!$ok) {
+          FileLogger::warning("Login failed for username '{$username}' from IP {$ip}");
           usleep(500000); // 0.5s delay
           Response::view('auth/login', ['error' => 'Invalid credentials.']);
           return;
@@ -139,7 +148,8 @@ final class AuthController {
       $msg = ($type === 'IP') 
           ? "Too many attempts from this IP address. Please wait $left minute(s) before trying again."
           : "Too many attempts for this User. Please wait $left minute(s) before trying again.";
-
+      $entity = ($type === 'IP') ? $ip : $username;
+      FileLogger::warning("Lockout enforced for {$type} '{$entity}' due to multiple failed login attempts.");
       Response::view('auth/login', ['error' => $msg]);
   }
 
