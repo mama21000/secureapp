@@ -54,6 +54,22 @@ final class Uploads
       return ['ok' => false, 'error' => 'Only JPG/PNG/WebP allowed.'];
     }
 
+    // before loading image, check image dimensions using getimagesize (prevents memory exhaustion)
+    $info = @getimagesize($tmp);
+    if ($info === false) {
+      FileLogger::warning("Failed to get image size for uploaded file: " . $tmp);
+      return ['ok' => false, 'error' => 'Invalid image file.'];
+    }
+
+    $w = $info[0];
+    $h = $info[1];
+
+    // Basic dimension sanity (prevents huge memory bombs), we don't want to call imagecreatefrom* on a 10000x10000 image for example
+    if ($w <= 0 || $h <= 0 || $w > 2000 || $h > 2000) {
+      FileLogger::warning("Image with invalid dimensions uploaded: {$w}x{$h}");
+      return ['ok' => false, 'error' => 'Invalid image dimensions.'];
+    }
+
     // Load image safely
     $img = null;
     if ($mime === 'image/jpeg') $img = @imagecreatefromjpeg($tmp);
@@ -63,15 +79,6 @@ final class Uploads
     if (!$img) {
       FileLogger::warning("Failed to load image file: " . $tmp);
       return ['ok' => false, 'error' => 'Invalid image data.'];
-    }
-
-    // Basic dimension sanity (prevents huge memory bombs)
-    $w = imagesx($img);
-    $h = imagesy($img);
-    if ($w <= 0 || $h <= 0 || $w > 2000 || $h > 2000) {
-      imagedestroy($img);
-      FileLogger::warning("Image with invalid dimensions uploaded: {$w}x{$h}");
-      return ['ok' => false, 'error' => 'Invalid image dimensions.'];
     }
 
     // Re-encode to WebP (strips metadata & payload tricks)
