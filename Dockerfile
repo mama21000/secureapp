@@ -13,8 +13,8 @@ COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
 COPY . /var/www/html
 
-RUN chown -R www-data:www-data /var/www/html/storage \
-    && chmod -R 750 /var/www/html/storage
+RUN mkdir -p /var/www/html/storage && chown -R www-data:www-data /var/www/html/storage \
+&& chmod -R 750 /var/www/html/storage
 
 # Production hardening: don't show errors
 RUN echo "display_errors=0" > /usr/local/etc/php/conf.d/99-secure.ini \
