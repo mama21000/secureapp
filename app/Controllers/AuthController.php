@@ -20,9 +20,17 @@ final class AuthController {
   public function register(): void {
     CSRF::verify();
 
-    $username = trim((string)($_POST['username'] ?? ''));
-    $email = trim((string)($_POST['email'] ?? ''));
-    $password = (string)($_POST['password'] ?? '');
+  $username = trim((string)($_POST['username'] ?? ''));
+  $email = trim((string)($_POST['email'] ?? ''));
+  $password = (string)($_POST['password'] ?? '');
+  $confirm_password = (string)($_POST['confirm_password'] ?? '');
+
+  //  Confirm password check
+  if ($password !== $confirm_password) {
+    FileLogger::warning("Registration failed: Passwords do not match for '{$username}'");
+    Response::view('auth/register', ['error' => 'Passwords do not match.']);
+    return;
+  }
 
     if (!preg_match('/^[a-zA-Z0-9_]{3,40}$/', $username)) {
       FileLogger::warning("Registration failed: Invalid username '{$username}'");

@@ -30,6 +30,30 @@
             <div class="form-text">Minimum 10 characters.</div>
           </div>
 
+          <!-- Confirm Password -->
+          <div class="form-floating">
+            <input class="form-control" id="confirm_password" type="password" name="confirm_password" placeholder="Confirm Password" required minlength="10" oninput="checkPasswords()">
+            <label for="confirm_password">Confirm Password</label>
+          </div>
+          <div id="password-error" class="text-danger small" style="display:none;">Passwords do not match.</div>
+
+          <script>
+            function checkPasswords() {
+              const p = document.getElementById('password').value;
+              const cp = document.getElementById('confirm_password').value;
+              const err = document.getElementById('password-error');
+              const btn = document.querySelector('.btn-primary');
+              if (cp && p !== cp) {
+                err.style.display = 'block';
+                btn.disabled = true;
+              } else {
+                err.style.display = 'none';
+                btn.disabled = false;
+              }
+            }
+          </script>
+        
+
           <button class="btn btn-primary w-100">Create account</button>
 
           <div class="text-center small text-muted">
@@ -40,4 +64,3 @@
     </div>
   </div>
 </div>
-
