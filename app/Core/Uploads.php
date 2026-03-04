@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 namespace App\Core;
+use App\Core\FileLoggger;
 
 final class Uploads
 {
@@ -21,15 +22,19 @@ final class Uploads
   public static function handleAvatarUpload(array $file): array
   {
     if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
+      FileLogger::warning("File upload error code: " . ($file['error'] ?? 'N/A'));
       return ['ok' => false, 'error' => 'Upload failed.'];
     }
     if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+      FileLogger::warning("Invalid file upload attempt.");
       return ['ok' => false, 'error' => 'Invalid upload.'];
     }
     if (!isset($file['size']) || (int)$file['size'] <= 0) {
+      FileLogger::warning("Empty file upload attempt.");
       return ['ok' => false, 'error' => 'Empty file.'];
     }
     if ((int)$file['size'] > self::MAX_AVATAR_BYTES) {
+      FileLogger::warning("File upload exceeds size limit: " . (int)$file['size'] . " bytes.");
       return ['ok' => false, 'error' => 'Avatar too large (max 1MB).'];
     }
 
@@ -45,6 +50,7 @@ final class Uploads
       'image/webp',
     ];
     if (!in_array($mime, $allowed, true)) {
+      FileLogger::warning("Disallowed file type upload attempt: " . $mime);
       return ['ok' => false, 'error' => 'Only JPG/PNG/WebP allowed.'];
     }
 
@@ -55,6 +61,7 @@ final class Uploads
     if ($mime === 'image/webp') $img = @imagecreatefromwebp($tmp);
 
     if (!$img) {
+      FileLogger::warning("Failed to load image file: " . $tmp);
       return ['ok' => false, 'error' => 'Invalid image data.'];
     }
 
@@ -63,6 +70,7 @@ final class Uploads
     $h = imagesy($img);
     if ($w <= 0 || $h <= 0 || $w > 2000 || $h > 2000) {
       imagedestroy($img);
+      FileLogger::warning("Image with invalid dimensions uploaded: {$w}x{$h}");
       return ['ok' => false, 'error' => 'Invalid image dimensions.'];
     }
 
@@ -80,6 +88,11 @@ final class Uploads
     imagedestroy($img);
 
     if (!$ok || !is_file($absPath)) {
+      $err = error_get_last();
+      $reason = $err['message'] ?? 'unknown error';
+      FileLogger::error(
+        "Avatar processing failed while saving WebP. Path={$absPath}, Reason={$reason}"
+      );
       return ['ok' => false, 'error' => 'Failed to process image.'];
     }
 
@@ -90,7 +103,7 @@ final class Uploads
 
     // relative path stored in DB (not attacker-controlled)
     $relative = 'avatars/' . $name;
-
+    FileLogger::info("Avatar uploaded successfully: {$relative} ({$size} bytes)");
     return ['ok' => true, 'path' => $relative, 'mime' => 'image/webp', 'size' => $size];
   }
 }

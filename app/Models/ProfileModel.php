@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Core\DB;
+use App\Core\FileLogger;
 
 final class ProfileModel
 {
@@ -42,6 +43,7 @@ final class ProfileModel
         bio = VALUES(bio)
     ");
     $stmt->execute([$userId, $fullName, $phone, $bio]);
+    FileLogger::info("Profile updated for user ID {$userId}");
   }
 
   public static function setAvatar(int $userId, string $relativePath, string $mime, int $size): void
@@ -56,6 +58,7 @@ final class ProfileModel
         avatar_size = VALUES(avatar_size)
     ");
     $stmt->execute([$userId, $relativePath, $mime, $size]);
+    FileLogger::info("Avatar information updated for user ID {$userId}");
   }
 }
 

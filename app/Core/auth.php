@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 namespace App\Core;
+use App\Core\FileLogger;
 
 final class Auth {
   public static function userId(): ?int {
@@ -28,6 +29,7 @@ final class Auth {
     $_SESSION['uid'] = $uid;
     $_SESSION['uname'] = $uname;
     $_SESSION['_regen'] = time();
+    FileLogger::info("User logged in: {$uname} (ID: {$uid})");
   }
 
   public static function logout(): void {
@@ -40,6 +42,7 @@ final class Auth {
       );
     }
     session_destroy();
+    FileLogger::info("User logged out");
   }
 }
 
