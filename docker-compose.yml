@@ -13,7 +13,7 @@ services:
       DB_PASS: "securepass"
       COOKIE_SECURE: "0"   # set to 1 when using HTTPS
     volumes:
-      - ./storage:/var/www/html/storage
+      - app_storage:/var/www/html/storage
       # - ./app:/var/www/html/app
       # - ./public:/var/www/html/public
     depends_on:
@@ -41,4 +41,5 @@ services:
 
 volumes:
   dbdata:
+  app_storage:
 
