@@ -2,7 +2,6 @@
 use App\Core\Security; 
 use App\Core\CSRF; 
 
-// Retrieve the nonce for CSP
 $nonce = $_SESSION['csp_nonce'] ?? '';
 ?>
 
@@ -11,10 +10,9 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
     aspect-ratio: 1 / 1;
     object-fit: cover;
     width: 100%;
-    border-radius: 0.375rem; /* Bootstrap .rounded */
-    border: 1px solid #dee2e6; /* Bootstrap .border */
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
   }
-  
   .avatar-placeholder {
     aspect-ratio: 1 / 1;
     width: 100%;
@@ -24,7 +22,7 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
     font-size: 3rem;
     font-weight: 700;
     color: #fff;
-    background-color: #6c757d; /* Bootstrap secondary color */
+    background-color: #6c757d;
     border-radius: 0.375rem;
     border: 1px solid #dee2e6;
   }
@@ -32,6 +30,16 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
 
 <div class="row justify-content-center">
   <div class="col-lg-9">
+
+    <div class="card shadow-sm mb-4 border-success">
+      <div class="card-body">
+        <div class="text-muted small mb-1">Current Balance</div>
+        <div class="fs-3 fw-bold text-success">
+          ₹<?= number_format((int)($p['balance'] ?? 0)) ?>
+        </div>
+      </div>
+    </div>
+
     <div class="card shadow-sm">
       <div class="card-body">
         
@@ -56,8 +64,6 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
 
               <div class="mb-3">
                 <?php 
-                  // Calculate initials for fallback
-                  // Ensure we have a string to work with
                   $dispName = $p['username'] ?? 'User';
                   $initial  = strtoupper(mb_substr((string)$dispName, 0, 1));
                 ?>
@@ -67,10 +73,7 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
                        class="avatar-box"
                        src="/avatar?id=<?= (int)$p['user_id'] ?>"
                        id="editAvatarImg">
-                  
-                  <div class="avatar-placeholder" 
-                       id="editAvatarFallback" 
-                       style="display:none;">
+                  <div class="avatar-placeholder" id="editAvatarFallback" style="display:none;">
                     <?= Security::e($initial) ?>
                   </div>
                 <?php else: ?>
@@ -82,7 +85,6 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
 
               <form method="post" action="/profile/avatar" enctype="multipart/form-data">
                 <input type="hidden" name="_csrf" value="<?= Security::e(CSRF::token()) ?>">
-                
                 <div class="mb-2">
                   <label class="form-label small text-muted">Upload new avatar</label>
                   <input class="form-control form-control-sm" type="file" name="avatar"
@@ -142,9 +144,9 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
     var img = document.getElementById('editAvatarImg');
     if (img) {
       img.onerror = function() {
-        this.style.display = 'none'; // Hide broken image
+        this.style.display = 'none';
         var fallback = document.getElementById('editAvatarFallback');
-        if (fallback) fallback.style.display = 'flex'; // Show initials circle
+        if (fallback) fallback.style.display = 'flex';
       };
     }
   });
