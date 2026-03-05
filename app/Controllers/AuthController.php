@@ -8,6 +8,7 @@ use App\Core\DB;
 use App\Core\CSRF;
 use App\Core\Auth;
 use App\Core\Security;
+use App\Core\Validator;
 use App\Models\UserModel;
 use App\Core\FileLogger;
 
@@ -27,14 +28,15 @@ final class AuthController {
 
 
     // Validation
-    if (!preg_match('/^[a-zA-Z0-9_]{3,40}$/', $username)) {
-      FileLogger::warning("Registration failed: Invalid username '{$username}'");
-      Response::view('auth/register', ['error' => 'Invalid username format.']);
+    if ($err = Validator::username($username)) {
+      FileLogger::warning("Registration failed: {$err}");
+      Response::view('auth/register', ['error' => $err]);
       return;
     }
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 120) {
-      FileLogger::warning("Registration failed: Invalid email '{$email}'");
-      Response::view('auth/register', ['error' => 'Invalid email address.']);
+
+    if ($err = Validator::email($email)) {
+      FileLogger::warning("Registration failed: {$err}");
+      Response::view('auth/register', ['error' => $err]);
       return;
     }
     
