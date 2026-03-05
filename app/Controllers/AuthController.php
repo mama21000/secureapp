@@ -41,10 +41,10 @@ final class AuthController {
     // validate password according to password policy.
     $password_validation_result = Security::validatePassword($password);
     if (!$password_validation_result['valid']) {
-        $error = $password_validation_result['message'];
-        FileLogger::warning("Registration failed: {$error}");
-        Response::view('auth/register', ['error' => $error]);
-        return;
+      $error = $password_validation_result['message'];
+      FileLogger::warning("Registration failed: {$error}");
+      Response::view('auth/register', ['error' => $error]);
+      return;
     }
 
     //  Confirm password check
