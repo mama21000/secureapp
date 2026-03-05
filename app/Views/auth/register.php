@@ -1,4 +1,10 @@
-<?php use App\Core\Security; use App\Core\CSRF; ?>
+<?php 
+use App\Core\Security; 
+use App\Core\CSRF; 
+
+// Retrieve the nonce for CSP
+$nonce = $_SESSION['csp_nonce'] ?? '';
+?>
 <div class="row justify-content-center">
   <div class="col-md-6 col-lg-5">
     <div class="card shadow-sm">
@@ -30,31 +36,15 @@
             <div class="form-text">Minimum 10 characters.</div>
           </div>
 
-          <!-- Confirm Password -->
-          <div class="form-floating">
-            <input class="form-control" id="confirm_password" type="password" name="confirm_password" placeholder="Confirm Password" required minlength="10" oninput="checkPasswords()">
-            <label for="confirm_password">Confirm Password</label>
+          <div>
+            <div class="form-floating">
+              <input class="form-control" id="confirm_password" type="password" name="confirm_password" placeholder="Confirm Password" required minlength="10">
+              <label for="confirm_password">Confirm Password</label>
+            </div>
+            <div id="password-error" class="text-danger small mt-1 d-none">Passwords do not match.</div>
           </div>
-          <div id="password-error" class="text-danger small" style="display:none;">Passwords do not match.</div>
 
-          <script>
-            function checkPasswords() {
-              const p = document.getElementById('password').value;
-              const cp = document.getElementById('confirm_password').value;
-              const err = document.getElementById('password-error');
-              const btn = document.querySelector('.btn-primary');
-              if (cp && p !== cp) {
-                err.style.display = 'block';
-                btn.disabled = true;
-              } else {
-                err.style.display = 'none';
-                btn.disabled = false;
-              }
-            }
-          </script>
-        
-
-          <button class="btn btn-primary w-100">Create account</button>
+          <button id="registerBtn" class="btn btn-primary w-100">Create account</button>
 
           <div class="text-center small text-muted">
             Already have an account? <a href="/login">Login</a>
@@ -64,3 +54,27 @@
     </div>
   </div>
 </div>
+
+<script nonce="<?= $nonce ?>">
+  document.addEventListener('DOMContentLoaded', function() {
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+    const errorMsg = document.getElementById('password-error');
+    const submitBtn = document.getElementById('registerBtn');
+
+    function checkPasswords() {
+      // Only check if confirm password has been typed into
+      if (confirmPassword.value !== '' && password.value !== confirmPassword.value) {
+        errorMsg.classList.remove('d-none');
+        submitBtn.disabled = true;
+      } else {
+        errorMsg.classList.add('d-none');
+        submitBtn.disabled = false;
+      }
+    }
+
+    // Attach listeners securely
+    password.addEventListener('input', checkPasswords);
+    confirmPassword.addEventListener('input', checkPasswords);
+  });
+</script>
