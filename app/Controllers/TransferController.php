@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\CSRF;
 use App\Core\Response;
+use App\Core\Validator;
 use App\Models\TransferModel;
 
 final class TransferController
@@ -27,20 +28,48 @@ final class TransferController
             return;
         }
 
-        $receiverId = (int)($_POST['receiver_id'] ?? 0);
-        $amount     = (int)($_POST['amount'] ?? 0);
-        $comment    = isset($_POST['comment']) ? (string)$_POST['comment'] : null;
+        $receiverIdRaw = $_POST['receiver_id'] ?? '';
+        $amountRaw     = $_POST['amount']      ?? '';
+        $comment       = isset($_POST['comment']) ? trim((string)$_POST['comment']) : null;
+
+        if (!ctype_digit((string)$receiverIdRaw) || (int)$receiverIdRaw <= 0) {
+            $_SESSION['flash_error'] = 'Please enter a valid recipient user ID.';
+            Response::redirect('/transfer');
+            return;
+        }
+        $receiverId = (int)$receiverIdRaw;
+
+        if ($err = Validator::moneyAmount($amountRaw, 1, 100000)) {
+            $_SESSION['flash_error'] = $err;
+            Response::redirect('/transfer');
+            return;
+        }
+        $amount = (int)$amountRaw;
+
+        if ($comment !== null && $comment !== '') {
+            if ($err = Validator::transferComment($comment)) {
+                $_SESSION['flash_error'] = $err;
+                Response::redirect('/transfer');
+                return;
+            }
+        } else {
+            $comment = null;
+        }
+
+        if ($receiverId === (int)$senderId) {
+            $_SESSION['flash_error'] = 'You cannot transfer money to yourself.';
+            Response::redirect('/transfer');
+            return;
+        }
 
         $res = TransferModel::transfer((int)$senderId, $receiverId, $amount, $comment);
 
         if (!$res['ok']) {
-            // ── Flash error then redirect back to form ──
             $_SESSION['flash_error'] = $res['error'] ?? 'Transfer failed.';
             Response::redirect('/transfer');
             return;
         }
 
-        // ── Flash success then redirect (prevents double-submit on refresh) ──
         $_SESSION['flash_success'] = 'Transfer successful! Transaction #' . ($res['tx_id'] ?? '');
         Response::redirect('/transfer');
     }
