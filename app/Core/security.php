@@ -11,7 +11,7 @@ final class Security
     public static function init(): void
     {
         // -------------------------------------------------
-        // 1. Enforce HTTPS (Fail Fast)
+        // Enforce HTTPS (Fail Fast)
         // -------------------------------------------------
         // (Uncomment for Production/Docker)
         /*
@@ -22,7 +22,7 @@ final class Security
         */
 
         // -------------------------------------------------
-        // 2. Secure Session Configuration
+        // Secure Session Configuration
         // -------------------------------------------------
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_only_cookies', '1');
@@ -40,7 +40,7 @@ final class Security
         session_start();
 
         // -------------------------------------------------
-        // 3. Session Timeout and Rotation
+        // Session Timeout and Rotation
         // -------------------------------------------------
         $now = time();
 
@@ -75,10 +75,10 @@ final class Security
 
     private static function destroySession(): void
     {
-        // 1. Clear session array
+        // Clear session array
         $_SESSION = [];
 
-        // 2. Delete the cookie
+        // Delete the cookie
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
             setcookie(
@@ -92,16 +92,15 @@ final class Security
             );
         }
 
-        // 3. Destroy session
+        // Destroy session
         session_destroy();
 
-        // 4. Start a NEW session just to store the flash message
-        // (We must restart because we just destroyed the old one)
+        // Start a NEW session just to store the flash message
         session_start();
         session_regenerate_id(true);
         $_SESSION['flash_info'] = 'Your session has expired. Please login again.';
 
-        // 5. Redirect to Login
+        // Redirect to Login
         header("Location: /login");
         exit;
     }
@@ -109,7 +108,7 @@ final class Security
     public static function sendHeaders(): void
     {
         // -------------------------------------------------
-        // 4. HSTS
+        // HSTS
         // -------------------------------------------------
         // header('Strict-Transport-Security: max-age=63072000; includeSubDomains; preload');
         $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
@@ -119,41 +118,37 @@ final class Security
         }
 
         // -------------------------------------------------
-        // 5. Clickjacking Protection
+        // Clickjacking Protection
         // -------------------------------------------------
         header('X-Frame-Options: DENY');
-        // header('Content-Security-Policy: frame-ancestors \'none\';');
 
         // -------------------------------------------------
-        // 6. MIME Sniffing Protection
+        // MIME Sniffing Protection
         // -------------------------------------------------
         header('X-Content-Type-Options: nosniff');
 
         // -------------------------------------------------
-        // 7. Privacy Controls
+        // Privacy Controls
         // -------------------------------------------------
         header('Referrer-Policy: strict-origin-when-cross-origin');
 
         // -------------------------------------------------
-        // 8. Browser Isolation Headers (Modern)
+        // Browser Isolation Headers (Modern)
         // -------------------------------------------------
         header('Cross-Origin-Opener-Policy: same-origin');
         header('Cross-Origin-Resource-Policy: same-origin');
         header('Cross-Origin-Embedder-Policy: require-corp');
 
         // -------------------------------------------------
-        // 9. Permissions Policy
+        // Permissions Policy
         // -------------------------------------------------
         header(
             'Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), gyroscope=()'
         );
 
         // -------------------------------------------------
-        // 10. Strong CSP with Nonce
+        // Strong CSP with Nonce
         // -------------------------------------------------
-        // $nonce = base64_encode(random_bytes(16));
-
-        // $_SESSION['csp_nonce'] = $nonce;
         if (!isset($_SESSION['csp_nonce'])) {
             $_SESSION['csp_nonce'] = base64_encode(random_bytes(16));
         }
@@ -162,22 +157,15 @@ final class Security
         $csp =
             "default-src 'self'; " .
 
-            // 1. SCRIPTS: STRICT (Nonce only)
             // Blocks all XSS (<script>...</script>).
-            "script-src 'self' 'nonce-{$nonce}'; " .
+            "script-src 'self' 'nonce-{$nonce}'; " .    // STRICT: Only allows scripts with nonce
+        
+            // Blocks injected <style>...</style> tags.
+            "style-src 'self' 'nonce-{$nonce}'; " .     // STRICT: Only allows styles with nonce
             
-            // 2. STYLE BLOCKS: STRICT (Nonce only)
-            // Blocks injected <style>...</style> tags. 
-            // YOUR REFACTORING WORK PROTECTS THIS.
-            "style-src 'self' 'nonce-{$nonce}'; " .
-            
-            // 3. STYLE ATTRIBUTES: RELAXED
             // Allows style="..." for Bootstrap JS positioning.
-            // This is a "Defense in Depth" compromise.
             "style-src-attr 'self' 'unsafe-inline'; " .
 
-            // "script-src 'self' 'nonce-{$nonce}'; " .	// STRICT: Only allows scripts with nonce
-            // "style-src 'self' 'nonce-{$nonce}'; " .		// STRICT: Only allows styles with nonce
             "img-src 'self' data:; " .
             "font-src 'self'; " .
             "connect-src 'self'; " .
@@ -190,7 +178,7 @@ final class Security
         header("Content-Security-Policy: $csp");
 
         // -------------------------------------------------
-        // 11. Anti-Caching for Sensitive Pages
+        // Anti-Caching for Sensitive Pages
         // -------------------------------------------------
         header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         header('Pragma: no-cache');

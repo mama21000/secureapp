@@ -8,6 +8,7 @@ use App\Core\DB;
 use App\Core\CSRF;
 use App\Core\Auth;
 use App\Core\Security;
+use App\Core\Validator;
 use App\Models\UserModel;
 use App\Core\FileLogger;
 
@@ -20,52 +21,59 @@ final class AuthController {
   public function register(): void {
     CSRF::verify();
 
-  $username = trim((string)($_POST['username'] ?? ''));
-  $email = trim((string)($_POST['email'] ?? ''));
-  $password = (string)($_POST['password'] ?? '');
-  $confirm_password = (string)($_POST['confirm_password'] ?? '');
+    $username = trim((string)($_POST['username'] ?? ''));
+    $email = trim((string)($_POST['email'] ?? ''));
+    $password = (string)($_POST['password'] ?? '');
+    $confirm_password = (string)($_POST['confirm_password'] ?? '');
 
-  //  Confirm password check
-  if ($password !== $confirm_password) {
-    FileLogger::warning("Registration failed: Passwords do not match for '{$username}'");
-    Response::view('auth/register', ['error' => 'Passwords do not match.']);
-    return;
-  }
 
-    if (!preg_match('/^[a-zA-Z0-9_]{3,40}$/', $username)) {
-      FileLogger::warning("Registration failed: Invalid username '{$username}'");
-      Response::view('auth/register', ['error' => 'Invalid username.']);
+    // Validation
+    if ($err = Validator::username($username)) {
+      FileLogger::warning("Registration failed: {$err}");
+      Response::view('auth/register', ['error' => $err]);
       return;
     }
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 120) {
-      FileLogger::warning("Registration failed: Invalid email '{$email}'");
-      Response::view('auth/register', ['error' => 'Invalid email.']);
+
+    if ($err = Validator::email($email)) {
+      FileLogger::warning("Registration failed: {$err}");
+      Response::view('auth/register', ['error' => $err]);
       return;
     }
     
     // validate password according to password policy.
     $password_validation_result = Security::validatePassword($password);
     if (!$password_validation_result['valid']) {
-        $error = $password_validation_result['message'];
-        FileLogger::warning("Registration failed: {$error}");
-        Response::view('auth/register', ['error' => $error]);
-        return;
+      $error = $password_validation_result['message'];
+      FileLogger::warning("Registration failed: {$error}");
+      Response::view('auth/register', ['error' => $error]);
+      return;
+    }
+
+    //  Confirm password check
+    if ($password !== $confirm_password) {
+      FileLogger::warning("Registration failed: Passwords do not match for '{$username}'");
+      Response::view('auth/register', ['error' => 'Passwords do not match.']);
+      return;
     }
 
     $hash = password_hash($password, PASSWORD_DEFAULT);
-
     $pdo = DB::pdo();
-    // Enforce uniqueness safely
+
+    // Enforce uniqueness safely. Database Insert (Atomic)
     $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash, balance) VALUES (?, ?, ?, 100)");
     try {
       $stmt->execute([$username, $email, $hash]);
     } catch (\PDOException $e) {
-      FileLogger::warning("Registration failed: Username/email already exists.");
-      Response::view('auth/register', ['error' => 'Username/email already exists.']);
+      // Don't reveal which one (username or email) failed for privacy (User Enumeration prevention)
+      FileLogger::warning("Registration failed: Duplicate entry for '{$username}' or '{$email}'");
+      Response::view('auth/register', ['error' => 'Username or email already exists.']);
       return;
     }
 
     FileLogger::info("User registered successfully: {$username}");
+    
+    // Redirect to login with a success flash message (requires Session to be active)
+    $_SESSION['flash_success'] = 'Registration successful! Please login.';
     Response::redirect('/login');
   }
 
@@ -86,7 +94,9 @@ final class AuthController {
       
       $pdo = DB::pdo();
 
-      // CHECK IP LOCKOUT
+      // ---------------------------------------------------
+      // BRUTE FORCE PROTECTION (IP Level)
+      // ---------------------------------------------------
       $stmtIP = $pdo->prepare("
           SELECT COUNT(*) as failures, MIN(attempted_at) as first_fail 
           FROM login_attempts 
@@ -102,7 +112,9 @@ final class AuthController {
           return;
       }
 
-      // CHECK USERNAME LOCKOUT (Even if 'ghost_user' doesn't exist)
+      // ---------------------------------------------------
+      // BRUTE FORCE PROTECTION (User Level, even if 'ghost_user' doesn't exist)
+      // ---------------------------------------------------
       $stmtUser = $pdo->prepare("
           SELECT COUNT(*) as failures, MIN(attempted_at) as first_fail 
           FROM login_attempts 
@@ -118,23 +130,33 @@ final class AuthController {
           return;
       }
 
-      // AUTHENTICATE
+      // ---------------------------------------------------
+      // AUTHENTICATION
+      // ---------------------------------------------------
       $user = UserModel::findForAuth($username);
+      
+      // Verify hash
       $ok = $user && password_verify($password, $user['password_hash']);
 
-      // LOG RESULT
+      // Log the attempt immediately
       $ins = $pdo->prepare("INSERT INTO login_attempts (ip, username, success) VALUES (?, ?, ?)");
       $ins->execute([$ip, $username ?: null, $ok ? 1 : 0]);
 
       if (!$ok) {
           FileLogger::warning("Login failed for username '{$username}' from IP {$ip}");
-          usleep(500000); // 0.5s delay
+          
+          // Delay (prevents timing attacks)
+          usleep(random_int(300000, 500000)); // 300ms - 500ms
+          
           Response::view('auth/login', ['error' => 'Invalid credentials.']);
           return;
       }
 
-      // SUCCESS
+      // ---------------------------------------------------
+      // SUCCESS: BIND SESSION
+      // ---------------------------------------------------
       Auth::login((int)$user['id'], (string)$user['username']);
+      
       Response::redirect('/');
   }
 
@@ -162,8 +184,12 @@ final class AuthController {
   }
 
   public function logout(): void {
-    CSRF::verify();
+    // CSRF verification on logout is done if forms send _csrf.
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        CSRF::verify();
+    }
+    
     Auth::logout();
-    Response::redirect('/');
+    Response::redirect('/login');
   }
 }
