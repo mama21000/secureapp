@@ -49,9 +49,12 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
             <?php endif; ?>
           </div>
         <?php endif; ?>
-
+        <?php
+        $_SESSION['transfer_token']=bin2hex(random_bytes(32));
+        ?>
         <form method="post" action="/transfer" class="row g-3" autocomplete="off">
           <input type="hidden" name="_csrf" value="<?= Security::e(CSRF::token()) ?>">
+          <input type="hidden" name="transfer_token" value="<?= Security::e($_SESSION['transfer_token']) ?>">          
 
           <div class="col-md-6">
             <div class="form-floating">
