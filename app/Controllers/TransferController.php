@@ -21,6 +21,11 @@ final class TransferController
     {
         Auth::requireLogin();
         CSRF::verify();
+        if (!isset($_POST['transfer_token']) || $_POST['transfer_token'] !== ($_SESSION['transfer_token'] ?? '')){
+            http_response_code(403);
+            die("Invalid or Reused transfer token");
+        }
+        unset($_SESSION['transfer_token']);
 
         $senderId = Auth::userId();
         if ($senderId === null) {
