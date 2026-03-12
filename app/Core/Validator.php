@@ -22,11 +22,22 @@ final class Validator
 
     public static function moneyAmount(mixed $value, int $min = 1, int $max = 100000): ?string
     {
-        if (!is_numeric($value)) return 'Amount must be a number.';
-        $amount = (int)$value;
-        if ((float)$value !== (float)$amount) return 'Amount must be a whole number (no decimals).';
+        // Convert to string to prevent array/object injection
+        $valStr = (string)$value;
+
+        // STRICT TYPE CHECK
+        // Don't accept '1e1', '10.5', '-5' or spaces.
+        if (!ctype_digit($valStr)) {
+            return 'Amount must be a positive whole number (digits only).';
+        }
+
+        // Cast to int safely
+        $amount = (int)$valStr;
+
+        // Boundary checks
         if ($amount < $min) return "Amount must be at least {$min}.";
         if ($amount > $max) return "Amount must not exceed " . number_format($max) . '.';
+        
         return null;
     }
 
