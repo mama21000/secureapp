@@ -24,7 +24,7 @@ final class TransferController
         if (!isset($_POST['transfer_token']) || $_POST['transfer_token'] !== ($_SESSION['transfer_token'] ?? '')){
             http_response_code(403);
             $_SESSION['flash_error'] = 'Invalid or reused transfer token';
-			Response::redirect('/transfer');
+            return;
         }
         unset($_SESSION['transfer_token']);
 

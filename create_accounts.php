@@ -16,11 +16,11 @@ echo "🛡️ SecureApp Auto-Account Generator 🛡️\n";
 echo "========================================\n";
 
 $users = [
-    ['username' => 'admin',   'email' => 'admin@secureapp.local',   'password' => 'Admin@12345!'],
-    ['username' => 'alice',   'email' => 'alice@secureapp.local',   'password' => 'Alice@12345!'],
-    ['username' => 'bob',     'email' => 'bob@secureapp.local',     'password' => 'Bob@12345!'],
-    ['username' => 'charlie', 'email' => 'charlie@secureapp.local', 'password' => 'Charlie@12345!'],
-    ['username' => 'dave',    'email' => 'dave@secureapp.local',    'password' => 'Dave@12345!'],
+    ['username' => 'alice',   'email' => 'alice@secureapp.local',   'password' => 'G7!kL2@pQ9x#'],
+    ['username' => 'bob',     'email' => 'bob@secureapp.local',     'password' => 'T4$zA8!mR2&y'],
+    ['username' => 'charlie', 'email' => 'charlie@secureapp.local', 'password' => 'Q!6bV3@wL9$e'],
+    ['username' => 'dave',    'email' => 'dave@secureapp.local',    'password' => 'H2@X7!qM5$kP'],
+    ['username' => 'eve',   'email' => 'eve@secureapp.local',   'password' => 'Z!8dR4@tY6#s'],
 ];
 
 try {
