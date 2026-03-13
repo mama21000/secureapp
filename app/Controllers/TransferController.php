@@ -23,7 +23,8 @@ final class TransferController
         CSRF::verify();
         if (!isset($_POST['transfer_token']) || $_POST['transfer_token'] !== ($_SESSION['transfer_token'] ?? '')){
             http_response_code(403);
-            die("Invalid or Reused transfer token");
+            $_SESSION['flash_error'] = 'Invalid or reused transfer token';
+			Response::redirect('/transfer');
         }
         unset($_SESSION['transfer_token']);
 
