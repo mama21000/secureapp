@@ -255,7 +255,9 @@ No third-party security frameworks were used.
   - `X-Content-Type-Options: nosniff`
   - `SameSite=Strict` cookies  
 
-  https://developer.mozilla.org/en-US/docs/Web/HTTP/Security
+  https://developer.mozilla.org/en-US/docs/Security
+  https://developer.mozilla.org/en-US/docs/HTTP
+  https://developer.mozilla.org/en-US/docs/Web
 
 ---
 
