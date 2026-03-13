@@ -74,6 +74,10 @@ Stop containers AND delete DB volume
 
 ## docker compose down -v
 
+Script to create accounts automatically
+
+## docker compose exec web php create_accounts.php
+
 
 # 3. Access Application
 ---------------------
@@ -226,3 +230,57 @@ To allow developing application in realtime, so that the webapp gets updated as 
 This does two things - 
 1. Mounts app and public directory on docker image. The webapp will immediately reflect changes made by developers.
 2. Report all errors on client side.
+
+
+## 📚 References & Resources
+
+To ensure **enterprise-grade security**, this application was built adhering to **strict industry guidelines and official documentation**.  
+No third-party security frameworks were used.
+
+---
+
+### 1. Web Security & Threat Modeling
+
+- **OWASP Top 10 (2021)**  
+  Used as the primary baseline to design defenses against **Injection**, **Broken Access Control**, and **Cryptographic Failures**.  
+  https://owasp.org/Top10/
+
+- **OWASP Transaction Authorization Cheat Sheet**  
+  Referenced for implementing the **Synchronizer Token Pattern** and preventing **Race Conditions**.  
+  https://cheatsheetseries.owasp.org/cheatsheets/Transaction_Authorization_Cheat_Sheet.html
+
+- **MDN Web Docs – HTTP Security**  
+  Used to configure strict browser policies including:
+  - `Content-Security-Policy` (CSP nonces)
+  - `X-Content-Type-Options: nosniff`
+  - `SameSite=Strict` cookies  
+
+  https://developer.mozilla.org/en-US/docs/Web/HTTP/Security
+
+---
+
+### 2. Backend Security & Cryptography
+
+- **PHP Official Documentation – Password Hashing**  
+  Utilized `password_hash()` for secure credential storage using **bcrypt**.  
+  https://www.php.net/manual/en/function.password-hash.php
+
+- **PHP Official Documentation – Sessions**  
+  Utilized native sessions (`session_regenerate_id`) for mitigating **Session Fixation**.  
+  https://www.php.net/manual/en/book.session.php
+
+- **PHP GD Library**  
+  Used `imagecreatefromwebp` to securely process and strip **polyglot image uploads**.  
+  https://www.php.net/manual/en/book.image.php
+
+- **MySQL InnoDB Transaction Model**  
+  Referenced to implement **ACID-compliant transactions** to eliminate **deadlock scenarios**.  
+  https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-model.html
+
+---
+
+### 3. Frontend UI
+
+- **Bootstrap 5.3 Documentation**  
+  Referenced for **responsive UI components**, **grid layouts**, and **secure form styling**.  
+  https://getbootstrap.com/docs/5.3/

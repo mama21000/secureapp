@@ -6,7 +6,7 @@ services:
       - "8443:443"
     environment:
       APP_ENV: "prod"
-      APP_KEY: "change_this_to_a_long_random_string_32plus_chars"
+      APP_KEY: "bf832d501ea49d9f625387b0fdc9f828bd8d2267"
       DB_HOST: "db"
       DB_NAME: "secureapp"
       DB_USER: "secureuser"
@@ -42,4 +42,3 @@ services:
 volumes:
   dbdata:
   app_storage:
-
