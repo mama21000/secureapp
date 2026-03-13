@@ -59,7 +59,7 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
           <div class="col-md-6">
             <div class="form-floating">
               <input class="form-control" id="receiver_id" type="number" name="receiver_id" min="1"
-       					placeholder="Receiver User ID" value="<?= isset($_GET['receiver_id']) ? (int)$_GET['receiver_id'] : '' ?>" required>
+                     placeholder="Receiver User ID" required>
               <label for="receiver_id">Receiver User ID</label>
             </div>
             <div class="form-text small">Find user IDs using the Search page.</div>

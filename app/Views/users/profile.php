@@ -151,7 +151,7 @@ $nonce = $_SESSION['csp_nonce'] ?? '';
             </div>
           <?php else: ?>
             <div class="mt-2">
-              <a class="btn btn-sm btn-primary w-100" href="/transfer?receiver_id=<?= (int)$u['id'] ?>">Send Money</a>
+              <a class="btn btn-sm btn-primary w-100" href="/transfer">Send Money</a>
               <div class="text-muted mt-2 text-center receiver-id">
                 Receiver ID: <strong>#<?= (int)$u['id'] ?></strong>
               </div>
