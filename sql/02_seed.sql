@@ -1,4 +1,4 @@
--- Optional seed admin/test account (password: Password@123)
+-- Optional seed testuser account (password: Password@123)
 INSERT INTO users (username, email, password_hash, balance)
 VALUES (
   'testuser',
