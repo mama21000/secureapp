@@ -2,8 +2,8 @@ services:
   web:
     build: .
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "80:80"
+      - "443:443"
     environment:
       APP_ENV: "prod"
       APP_KEY: "bf832d501ea49d9f625387b0fdc9f828bd8d2267"
