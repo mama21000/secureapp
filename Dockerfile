@@ -19,7 +19,8 @@ RUN mkdir -p /var/www/html/storage/logs && chown -R www-data:www-data /var/www/h
 # Production hardening: don't show errors
 RUN echo "display_errors=0" > /usr/local/etc/php/conf.d/99-secure.ini \
  && echo "log_errors=1" >> /usr/local/etc/php/conf.d/99-secure.ini \
- && echo "error_log=/var/www/html/storage/logs/php_errors.log" >> /usr/local/etc/php/conf.d/99-secure.ini
+ && echo "error_log=/var/www/html/storage/logs/php_errors.log" >> /usr/local/etc/php/conf.d/99-secure.ini \
+ && echo "expose_php=0" >> /usr/local/etc/php/conf.d/99-secure.ini
  
 # enable ssl module
 RUN a2enmod ssl
