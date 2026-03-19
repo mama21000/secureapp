@@ -9,11 +9,11 @@ use App\Models\ActivityLogModel;
 
 final class LogsController
 {
-  public function index(): void
-  {
-    Auth::requireLogin();
-    $items = ActivityLogModel::latest(200);
-    Response::view('logs/index', ['items' => $items]);
+  public function index(): void {
+    // Completely disabled for production security
+    http_response_code(404);
+    echo "404 Not Found";
+    exit;
   }
 }
 
