@@ -17,6 +17,6 @@ Stack: PHP 8.2, MySQL 8, Apache (TLS 1.3 only), Docker Compose.
 - Server-side validation layer (`app/Core/Validator.php`) for registration, profiles and transfers
 - Centralized exception and error handling with server-side logging
 
-Team project, originally developed at github.com/sureshbaddipudi/secureapp.
+
 
 ---
